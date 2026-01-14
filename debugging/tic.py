@@ -8,23 +8,23 @@ def print_board(board):
 
 def check_winner(board):
     # Check rows
-    for row in board:
+    for i, row in enumerate(board):
         if row[0] != " " and row.count(row[0]) == 3:
-            return True
+            return row[0], f"row {i}"
 
     # Check columns
     for col in range(3):
         if board[0][col] != " " and board[0][col] == board[1][col] == board[2][col]:
-            return True
+            return board[0][col], f"column {col}"
 
     # Check diagonals
     if board[0][0] != " " and board[0][0] == board[1][1] == board[2][2]:
-        return True
+        return board[0][0], "diagonal top-left to bottom-right"
 
     if board[0][2] != " " and board[0][2] == board[1][1] == board[2][0]:
-        return True
+        return board[0][2], "diagonal top-right to bottom-left"
 
-    return False
+    return None, None
 
 def is_board_full(board):
     return all(cell != " " for row in board for cell in row)
@@ -47,10 +47,10 @@ def tic_tac_toe():
     while True:
         print_board(board)
 
-        # Get a valid row
+        # Get valid row
         row = get_valid_input(f"Enter row (0, 1, or 2) for player {player}: ")
 
-        # Get a valid column
+        # Get valid column
         while True:
             col = get_valid_input(f"Enter column (0, 1, or 2) for player {player}: ")
             if board[row][col] == " ":
@@ -58,16 +58,17 @@ def tic_tac_toe():
             else:
                 print("That spot is already taken! Try again.")
 
-        # Place the player's mark
+        # Place player's mark
         board[row][col] = player
 
-        # Check for a winner
-        if check_winner(board):
+        # Check winner
+        winner, line = check_winner(board)
+        if winner:
             print_board(board)
-            print(f"Player {player} wins!")
+            print(f"🎉 Player {winner} wins! (Winning {line})")
             break
 
-        # Check for a draw
+        # Check draw
         if is_board_full(board):
             print_board(board)
             print("It's a draw!")
@@ -77,4 +78,3 @@ def tic_tac_toe():
         player = "O" if player == "X" else "X"
 
 tic_tac_toe()
-
