@@ -1,80 +1,97 @@
 #!/usr/bin/python3
+import random
+import os
 
-def print_board(board):
-    for i, row in enumerate(board):
-        print(" | ".join(row))
-        if i < 2:
-            print("-" * 9)
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-def check_winner(board):
-    # Check rows
-    for i, row in enumerate(board):
-        if row[0] != " " and row.count(row[0]) == 3:
-            return row[0], f"row {i}"
+class Minesweeper:
+    def __init__(self, width=10, height=10, mines=10):
+        self.width = width
+        self.height = height
+        self.total_mines = mines
+        self.mines = set(random.sample(range(width * height), mines))
+        self.revealed = [[False for _ in range(width)] for _ in range(height)]
 
-    # Check columns
-    for col in range(3):
-        if board[0][col] != " " and board[0][col] == board[1][col] == board[2][col]:
-            return board[0][col], f"column {col}"
+    def print_board(self, reveal=False):
+        clear_screen()
+        print('  ' + ' '.join(str(i) for i in range(self.width)))
+        for y in range(self.height):
+            print(y, end=' ')
+            for x in range(self.width):
+                index = y * self.width + x
+                if reveal or self.revealed[y][x]:
+                    if index in self.mines:
+                        print('*', end=' ')
+                    else:
+                        count = self.count_mines_nearby(x, y)
+                        print(count if count > 0 else ' ', end=' ')
+                else:
+                    print('.', end=' ')
+            print()
 
-    # Check diagonals
-    if board[0][0] != " " and board[0][0] == board[1][1] == board[2][2]:
-        return board[0][0], "diagonal top-left to bottom-right"
+    def count_mines_nearby(self, x, y):
+        count = 0
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx == 0 and dy == 0:
+                    continue
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.width and 0 <= ny < self.height:
+                    if (ny * self.width + nx) in self.mines:
+                        count += 1
+        return count
 
-    if board[0][2] != " " and board[0][2] == board[1][1] == board[2][0]:
-        return board[0][2], "diagonal top-right to bottom-left"
+    def reveal(self, x, y):
+        if self.revealed[y][x]:
+            return True
 
-    return None, None
+        if (y * self.width + x) in self.mines:
+            return False
 
-def is_board_full(board):
-    return all(cell != " " for row in board for cell in row)
+        self.revealed[y][x] = True
 
-def get_valid_input(prompt):
-    while True:
-        try:
-            value = int(input(prompt))
-            if 0 <= value <= 2:
-                return value
-            else:
-                print("Invalid input. Please enter a number between 0 and 2.")
-        except ValueError:
-            print("Invalid input. Please enter a number.")
+        if self.count_mines_nearby(x, y) == 0:
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                        self.reveal(nx, ny)
 
-def tic_tac_toe():
-    board = [[" " for _ in range(3)] for _ in range(3)]
-    player = "X"
+        return True
 
-    while True:
-        print_board(board)
+    def check_win(self):
+        revealed_cells = sum(
+            self.revealed[y][x]
+            for y in range(self.height)
+            for x in range(self.width)
+        )
+        return revealed_cells == (self.width * self.height - self.total_mines)
 
-        # Get valid row
-        row = get_valid_input(f"Enter row (0, 1, or 2) for player {player}: ")
-
-        # Get valid column
+    def play(self):
         while True:
-            col = get_valid_input(f"Enter column (0, 1, or 2) for player {player}: ")
-            if board[row][col] == " ":
-                break
-            else:
-                print("That spot is already taken! Try again.")
+            self.print_board()
+            try:
+                x = int(input("Enter x coordinate: "))
+                y = int(input("Enter y coordinate: "))
 
-        # Place player's mark
-        board[row][col] = player
+                if not (0 <= x < self.width and 0 <= y < self.height):
+                    print("Coordinates out of bounds.")
+                    continue
 
-        # Check winner
-        winner, line = check_winner(board)
-        if winner:
-            print_board(board)
-            print(f"🎉 Player {winner} wins! (Winning {line})")
-            break
+                if not self.reveal(x, y):
+                    self.print_board(reveal=True)
+                    print("Game Over! You hit a mine.")
+                    break
 
-        # Check draw
-        if is_board_full(board):
-            print_board(board)
-            print("It's a draw!")
-            break
+                if self.check_win():
+                    self.print_board(reveal=True)
+                    print("Congratulations! You've won the game.")
+                    break
 
-        # Switch player
-        player = "O" if player == "X" else "X"
+            except ValueError:
+                print("Invalid input. Please enter numbers only.")
 
-tic_tac_toe()
+if __name__ == "__main__":
+    game = Minesweeper()
+    game.play()
